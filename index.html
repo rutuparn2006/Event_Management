@@ -113,7 +113,7 @@ body {
   font-weight: 500;
 }
 
-.form-group input {
+.form-group input, .form-group select {
   width: 100%;
   padding: 14px 16px;
   background: var(--surface2);
@@ -124,7 +124,7 @@ body {
   transition: all 0.3s;
 }
 
-.form-group input:focus {
+.form-group input:focus, .form-group select:focus {
   outline: none;
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(200, 240, 90, 0.2);
@@ -156,24 +156,27 @@ body {
   color: white;
 }
 
-.error-message {
-  background: rgba(255, 71, 87, 0.1);
-  color: var(--danger);
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 14px;
-  text-align: center;
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--text);
+  width: auto;
+  padding: 10px 20px;
 }
 
-.success-message {
-  background: rgba(74, 222, 128, 0.1);
-  color: var(--success);
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 20px;
-  font-size: 14px;
-  text-align: center;
+.btn-sm {
+  width: auto;
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.btn-book {
+  background: var(--success);
+  color: #000;
+}
+
+.btn-book:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
 }
 
 /* Dashboard Styles */
@@ -267,16 +270,9 @@ body {
   gap: 16px;
 }
 
-.btn-secondary {
-  background: var(--surface2);
-  color: var(--text);
-  width: auto;
-  padding: 10px 20px;
-}
-
 .events-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 20px;
 }
 
@@ -326,6 +322,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .event-price {
@@ -333,10 +331,13 @@ body {
   color: var(--accent);
 }
 
-.btn-sm {
-  width: auto;
-  padding: 8px 16px;
-  font-size: 13px;
+.event-seats {
+  font-size: 12px;
+  color: var(--text3);
+}
+
+.seats-low {
+  color: var(--danger);
 }
 
 .modal {
@@ -398,11 +399,51 @@ textarea {
   color: var(--text3);
 }
 
+.booking-details {
+  background: var(--surface2);
+  padding: 16px;
+  border-radius: 12px;
+  margin: 16px 0;
+}
+
+.booking-details p {
+  margin: 8px 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 10px 20px;
+  color: var(--text3);
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.tab-btn.active {
+  background: var(--accent);
+  color: #000;
+}
+
+.my-bookings-section {
+  margin-top: 32px;
+}
+
 @media (max-width: 768px) {
   .auth-card { padding: 32px; margin: 16px; }
   .main-content { padding: 16px; }
   .navbar { padding: 12px 16px; }
   .stats-grid { grid-template-columns: 1fr; }
+  .events-grid { grid-template-columns: 1fr; }
 }
 </style>
 </head>
@@ -416,9 +457,8 @@ textarea {
 
 <script>
 // ============================================================
-//  FIREBASE CONFIGURATION - REPLACE WITH YOUR CONFIG!
+//  FIREBASE CONFIGURATION - YOUR CONFIG
 // ============================================================
-// Go to Firebase Console → Project Settings → Your Web App → Copy config
 const firebaseConfig = {
   apiKey: "AIzaSyDlU0Lz92AVTxZI1CGJuVXawfXceTNGr24",
   authDomain: "event-management-system-26b15.firebaseapp.com",
@@ -428,6 +468,7 @@ const firebaseConfig = {
   appId: "1:677748411988:web:64acac412b07323469a7c1",
   measurementId: "G-YCBGV9YWD5"
 };
+
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
@@ -438,13 +479,14 @@ const auth = firebase.auth();
 // ============================================================
 let currentUser = null;
 let events = [];
-let currentView = 'auth'; // 'auth' or 'dashboard'
+let myBookings = [];
+let currentView = 'auth';
+let activeTab = 'events';
 
 // ============================================================
 //  Helper Functions
 // ============================================================
 function showToast(message, type = 'success') {
-  // Simple alert for now, can be enhanced
   alert(message);
 }
 
@@ -456,7 +498,6 @@ async function signUp(email, password, name) {
     const userCredential = await auth.createUserWithEmailAndPassword(email, password);
     const user = userCredential.user;
     
-    // Save user data to Firestore
     await db.collection('users').doc(user.uid).set({
       name: name,
       email: email,
@@ -475,7 +516,6 @@ async function signIn(email, password) {
     const userCredential = await auth.signInWithEmailAndPassword(email, password);
     const user = userCredential.user;
     
-    // Get user data from Firestore
     const userDoc = await db.collection('users').doc(user.uid).get();
     const userData = userDoc.data();
     
@@ -530,18 +570,65 @@ async function addEvent(eventData) {
   }
 }
 
-async function updateEvent(eventId, eventData) {
+// ============================================================
+//  Booking Functions
+// ============================================================
+async function loadMyBookings() {
+  if (!currentUser) return [];
   try {
-    await db.collection('events').doc(eventId).update(eventData);
-    return { success: true };
+    const snapshot = await db.collection('bookings')
+      .where('userId', '==', currentUser.uid)
+      .get();
+    myBookings = [];
+    snapshot.forEach(doc => {
+      myBookings.push({ id: doc.id, ...doc.data() });
+    });
+    
+    // Populate event details for each booking
+    for (let booking of myBookings) {
+      const eventDoc = await db.collection('events').doc(booking.eventId).get();
+      if (eventDoc.exists) {
+        booking.event = { id: eventDoc.id, ...eventDoc.data() };
+      }
+    }
+    return myBookings;
   } catch (error) {
-    return { success: false, error: error.message };
+    console.error("Error loading bookings:", error);
+    return [];
   }
 }
 
-async function deleteEvent(eventId) {
+async function createBooking(eventId, tickets) {
   try {
-    await db.collection('events').doc(eventId).delete();
+    const eventDoc = await db.collection('events').doc(eventId).get();
+    const event = eventDoc.data();
+    
+    if (!event) {
+      return { success: false, error: 'Event not found' };
+    }
+    
+    const seatsLeft = event.capacity - (event.booked || 0);
+    if (seatsLeft < tickets) {
+      return { success: false, error: 'Not enough seats available' };
+    }
+    
+    const totalPrice = (event.price || 0) * tickets;
+    
+    await db.collection('bookings').add({
+      userId: currentUser.uid,
+      userName: currentUser.name,
+      eventId: eventId,
+      eventTitle: event.title,
+      tickets: tickets,
+      totalPrice: totalPrice,
+      bookingDate: new Date(),
+      status: 'confirmed'
+    });
+    
+    await db.collection('events').doc(eventId).update({
+      booked: (event.booked || 0) + tickets
+    });
+    
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
@@ -553,12 +640,12 @@ async function seedEvents() {
   const snapshot = await db.collection('events').get();
   if (snapshot.empty) {
     const sampleEvents = [
-      { title: '🎷 Neon Jazz Night', category: 'music', date: '2026-05-10', time: '20:00', venue: 'Blue Note Lounge', city: 'New York', price: 45, capacity: 120, emoji: '🎷', description: 'An immersive jazz evening featuring five acclaimed artists.' },
-      { title: '⚡ React Summit 2026', category: 'tech', date: '2026-05-22', time: '09:00', venue: 'TechHub Arena', city: 'San Francisco', price: 199, capacity: 500, emoji: '⚡', description: 'The premier React conference with 30+ talks.' },
-      { title: '🎨 Abstract Art Gala', category: 'arts', date: '2026-06-03', time: '18:30', venue: 'Metropolitan Gallery', city: 'Chicago', price: 35, capacity: 200, emoji: '🎨', description: 'A curated showcase of emerging artists.' },
-      { title: '🍜 Street Food Festival', category: 'food', date: '2026-06-15', time: '11:00', venue: 'Riverside Park', city: 'Austin', price: 0, capacity: 2000, emoji: '🍜', description: '50+ local food trucks.' },
-      { title: '🏃 Marathon City Run', category: 'sports', date: '2026-07-04', time: '07:00', venue: 'City Center', city: 'Boston', price: 60, capacity: 5000, emoji: '🏃', description: 'Annual 42k marathon.' },
-      { title: '🚀 Startup Pitch Day', category: 'business', date: '2026-07-18', time: '10:00', venue: 'Innovation Hub', city: 'Seattle', price: 25, capacity: 300, emoji: '🚀', description: '20 startups pitch to VCs.' }
+      { title: '🎷 Neon Jazz Night', category: 'music', date: '2026-05-10', time: '20:00', venue: 'Blue Note Lounge', city: 'New York', price: 45, capacity: 120, booked: 0, emoji: '🎷', description: 'An immersive jazz evening featuring five acclaimed artists.' },
+      { title: '⚡ React Summit 2026', category: 'tech', date: '2026-05-22', time: '09:00', venue: 'TechHub Arena', city: 'San Francisco', price: 199, capacity: 500, booked: 0, emoji: '⚡', description: 'The premier React conference with 30+ talks.' },
+      { title: '🎨 Abstract Art Gala', category: 'arts', date: '2026-06-03', time: '18:30', venue: 'Metropolitan Gallery', city: 'Chicago', price: 35, capacity: 200, booked: 0, emoji: '🎨', description: 'A curated showcase of emerging artists.' },
+      { title: '🍜 Street Food Festival', category: 'food', date: '2026-06-15', time: '11:00', venue: 'Riverside Park', city: 'Austin', price: 0, capacity: 2000, booked: 0, emoji: '🍜', description: '50+ local food trucks.' },
+      { title: '🏃 Marathon City Run', category: 'sports', date: '2026-07-04', time: '07:00', venue: 'City Center', city: 'Boston', price: 60, capacity: 5000, booked: 0, emoji: '🏃', description: 'Annual 42k marathon.' },
+      { title: '🚀 Startup Pitch Day', category: 'business', date: '2026-07-18', time: '10:00', venue: 'Innovation Hub', city: 'Seattle', price: 25, capacity: 300, booked: 0, emoji: '🚀', description: '20 startups pitch to VCs.' }
     ];
     
     for (const event of sampleEvents) {
@@ -569,7 +656,7 @@ async function seedEvents() {
 }
 
 // ============================================================
-//  Auth UI Components
+//  UI Components
 // ============================================================
 function renderAuthPage() {
   return `
@@ -629,9 +716,6 @@ function renderSignupForm() {
   `;
 }
 
-// ============================================================
-//  Dashboard UI Components
-// ============================================================
 function renderDashboard() {
   return `
     <div class="dashboard-container">
@@ -655,8 +739,8 @@ function renderDashboard() {
             <div class="stat-value">${events.length}</div>
           </div>
           <div class="stat-card">
-            <h3>Categories</h3>
-            <div class="stat-value">${new Set(events.map(e => e.category)).size}</div>
+            <h3>My Bookings</h3>
+            <div class="stat-value">${myBookings.length}</div>
           </div>
           <div class="stat-card">
             <h3>Cities</h3>
@@ -664,81 +748,117 @@ function renderDashboard() {
           </div>
         </div>
         
-        <div class="action-bar">
-          <h2>Upcoming Events</h2>
-          <button class="btn btn-primary btn-sm" onclick="openEventModal()">+ Create Event</button>
+        <div class="tabs">
+          <button class="tab-btn ${activeTab === 'events' ? 'active' : ''}" onclick="switchDashboardTab('events')">📅 All Events</button>
+          <button class="tab-btn ${activeTab === 'bookings' ? 'active' : ''}" onclick="switchDashboardTab('bookings')">🎟️ My Bookings</button>
+          <button class="tab-btn ${activeTab === 'create' ? 'active' : ''}" onclick="switchDashboardTab('create')">➕ Create Event</button>
         </div>
         
-        <div class="events-grid" id="events-grid">
-          ${events.length > 0 ? events.map(event => renderEventCard(event)).join('') : '<div class="empty-state">✨ No events yet. Create your first event!</div>'}
-        </div>
+        ${activeTab === 'events' ? renderEventsTab() : ''}
+        ${activeTab === 'bookings' ? renderBookingsTab() : ''}
+        ${activeTab === 'create' ? renderCreateEventTab() : ''}
       </main>
     </div>
     
-    <!-- Event Modal -->
-    <div id="event-modal" class="modal">
+    <!-- Booking Modal -->
+    <div id="booking-modal" class="modal">
       <div class="modal-content">
         <div class="modal-header">
-          <h2 id="modal-title">Create New Event</h2>
-          <button class="modal-close" onclick="closeEventModal()">&times;</button>
+          <h2>Book Tickets</h2>
+          <button class="modal-close" onclick="closeBookingModal()">&times;</button>
         </div>
-        <form id="event-form" onsubmit="handleSaveEvent(event)">
-          <div class="form-group">
-            <label>Event Title</label>
-            <input type="text" id="event-title" required>
-          </div>
-          <div class="form-group">
-            <label>Description</label>
-            <textarea id="event-description" rows="3"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Category</label>
-            <select id="event-category" class="form-group">
-              <option value="music">🎵 Music</option>
-              <option value="tech">💻 Tech</option>
-              <option value="arts">🎨 Arts</option>
-              <option value="food">🍔 Food</option>
-              <option value="sports">⚽ Sports</option>
-              <option value="business">💼 Business</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Emoji</label>
-            <input type="text" id="event-emoji" placeholder="🎉">
-          </div>
-          <div class="form-group">
-            <label>Date</label>
-            <input type="date" id="event-date" required>
-          </div>
-          <div class="form-group">
-            <label>Time</label>
-            <input type="time" id="event-time" required>
-          </div>
-          <div class="form-group">
-            <label>Venue</label>
-            <input type="text" id="event-venue" required>
-          </div>
-          <div class="form-group">
-            <label>City</label>
-            <input type="text" id="event-city" required>
-          </div>
-          <div class="form-group">
-            <label>Price ($)</label>
-            <input type="number" id="event-price" value="0">
-          </div>
-          <div class="form-group">
-            <label>Capacity</label>
-            <input type="number" id="event-capacity" value="100">
-          </div>
-          <button type="submit" class="btn btn-primary">Save Event</button>
-        </form>
+        <div id="booking-modal-body"></div>
       </div>
+    </div>
+  `;
+}
+
+function renderEventsTab() {
+  return `
+    <div class="action-bar">
+      <h2>Upcoming Events</h2>
+    </div>
+    <div class="events-grid">
+      ${events.length > 0 ? events.map(event => renderEventCard(event)).join('') : '<div class="empty-state">✨ No events available.</div>'}
+    </div>
+  `;
+}
+
+function renderBookingsTab() {
+  if (myBookings.length === 0) {
+    return `<div class="empty-state">🎟️ You haven't booked any events yet. Browse events and book your first experience!</div>`;
+  }
+  
+  return `
+    <div class="events-grid">
+      ${myBookings.map(booking => renderBookingCard(booking)).join('')}
+    </div>
+  `;
+}
+
+function renderCreateEventTab() {
+  return `
+    <div style="max-width: 600px; margin: 0 auto;">
+      <h2 style="margin-bottom: 24px;">Create New Event</h2>
+      <form onsubmit="handleCreateEvent(event)">
+        <div class="form-group">
+          <label>Event Title *</label>
+          <input type="text" id="new-event-title" required>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="new-event-desc" rows="3"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Category *</label>
+          <select id="new-event-category" required>
+            <option value="music">🎵 Music</option>
+            <option value="tech">💻 Tech</option>
+            <option value="arts">🎨 Arts</option>
+            <option value="food">🍔 Food</option>
+            <option value="sports">⚽ Sports</option>
+            <option value="business">💼 Business</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Emoji</label>
+          <input type="text" id="new-event-emoji" placeholder="🎉">
+        </div>
+        <div class="form-group">
+          <label>Date *</label>
+          <input type="date" id="new-event-date" required>
+        </div>
+        <div class="form-group">
+          <label>Time *</label>
+          <input type="time" id="new-event-time" required>
+        </div>
+        <div class="form-group">
+          <label>Venue *</label>
+          <input type="text" id="new-event-venue" required>
+        </div>
+        <div class="form-group">
+          <label>City *</label>
+          <input type="text" id="new-event-city" required>
+        </div>
+        <div class="form-group">
+          <label>Price ($)</label>
+          <input type="number" id="new-event-price" value="0">
+        </div>
+        <div class="form-group">
+          <label>Capacity *</label>
+          <input type="number" id="new-event-capacity" value="100" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Create Event →</button>
+      </form>
     </div>
   `;
 }
 
 function renderEventCard(event) {
   const seatsLeft = event.capacity - (event.booked || 0);
+  const isLowSeats = seatsLeft < 20 && seatsLeft > 0;
+  const isSoldOut = seatsLeft === 0;
+  
   return `
     <div class="event-card">
       <div class="event-icon">${event.emoji || '🎉'}</div>
@@ -747,11 +867,35 @@ function renderEventCard(event) {
         <div class="event-details">📅 ${event.date} · ${event.time}</div>
         <div class="event-details">📍 ${event.venue}, ${event.city}</div>
         <div class="event-details">🏷️ ${event.category}</div>
+        <div class="event-details">${event.description ? event.description.substring(0, 80) + '...' : ''}</div>
       </div>
       <div class="event-footer">
         <span class="event-price">${event.price === 0 ? 'FREE' : '$' + event.price}</span>
-        <span class="event-seats">${seatsLeft} seats left</span>
-        <button class="btn btn-sm btn-primary" onclick="viewEventDetails('${event.id}')">View</button>
+        <span class="event-seats ${isLowSeats ? 'seats-low' : ''}">${isSoldOut ? 'Sold Out' : seatsLeft + ' seats left'}</span>
+        ${!isSoldOut ? `<button class="btn btn-sm btn-book" onclick="openBookingModal('${event.id}')">Book Now</button>` : `<button class="btn btn-sm btn-secondary" disabled style="opacity:0.5">Sold Out</button>`}
+      </div>
+    </div>
+  `;
+}
+
+function renderBookingCard(booking) {
+  const event = booking.event;
+  if (!event) return '';
+  
+  return `
+    <div class="event-card">
+      <div class="event-icon">${event.emoji || '🎉'}</div>
+      <div class="event-info">
+        <h3>${event.title}</h3>
+        <div class="event-details">📅 ${event.date} · ${event.time}</div>
+        <div class="event-details">📍 ${event.venue}, ${event.city}</div>
+        <div class="event-details">🎟️ ${booking.tickets} ticket(s)</div>
+        <div class="event-details">💰 Total: $${booking.totalPrice}</div>
+        <div class="event-details">✅ Status: ${booking.status}</div>
+      </div>
+      <div class="event-footer">
+        <span class="event-price">Booked on ${new Date(booking.bookingDate).toLocaleDateString()}</span>
+        <button class="btn btn-sm btn-primary" onclick="viewEventDetails('${event.id}')">View Event</button>
       </div>
     </div>
   `;
@@ -767,6 +911,11 @@ window.switchTab = (tab) => {
   render();
 };
 
+window.switchDashboardTab = (tab) => {
+  activeTab = tab;
+  render();
+};
+
 window.handleLogin = async (e) => {
   e.preventDefault();
   const email = document.getElementById('login-email').value;
@@ -776,7 +925,10 @@ window.handleLogin = async (e) => {
   if (result.success) {
     currentUser = result.user;
     currentView = 'dashboard';
+    activeTab = 'events';
+    await seedEvents();
     await loadEvents();
+    await loadMyBookings();
     render();
   } else {
     alert('Login failed: ' + result.error);
@@ -798,7 +950,10 @@ window.handleSignup = async (e) => {
   if (result.success) {
     currentUser = result.user;
     currentView = 'dashboard';
+    activeTab = 'events';
+    await seedEvents();
     await loadEvents();
+    await loadMyBookings();
     render();
   } else {
     alert('Signup failed: ' + result.error);
@@ -809,54 +964,94 @@ window.handleLogout = async () => {
   await signOut();
 };
 
-window.openEventModal = () => {
-  document.getElementById('event-modal').classList.add('active');
-  document.getElementById('modal-title').textContent = 'Create New Event';
-  document.getElementById('event-form').reset();
-  window.editingEventId = null;
-};
-
-window.closeEventModal = () => {
-  document.getElementById('event-modal').classList.remove('active');
-};
-
-window.handleSaveEvent = async (e) => {
+window.handleCreateEvent = async (e) => {
   e.preventDefault();
   
   const eventData = {
-    title: document.getElementById('event-title').value,
-    description: document.getElementById('event-description').value,
-    category: document.getElementById('event-category').value,
-    emoji: document.getElementById('event-emoji').value || '🎉',
-    date: document.getElementById('event-date').value,
-    time: document.getElementById('event-time').value,
-    venue: document.getElementById('event-venue').value,
-    city: document.getElementById('event-city').value,
-    price: parseInt(document.getElementById('event-price').value) || 0,
-    capacity: parseInt(document.getElementById('event-capacity').value) || 100
+    title: document.getElementById('new-event-title').value,
+    description: document.getElementById('new-event-desc').value,
+    category: document.getElementById('new-event-category').value,
+    emoji: document.getElementById('new-event-emoji').value || '🎉',
+    date: document.getElementById('new-event-date').value,
+    time: document.getElementById('new-event-time').value,
+    venue: document.getElementById('new-event-venue').value,
+    city: document.getElementById('new-event-city').value,
+    price: parseInt(document.getElementById('new-event-price').value) || 0,
+    capacity: parseInt(document.getElementById('new-event-capacity').value) || 100,
+    booked: 0
   };
   
-  let result;
-  if (window.editingEventId) {
-    result = await updateEvent(window.editingEventId, eventData);
-  } else {
-    result = await addEvent(eventData);
-  }
-  
+  const result = await addEvent(eventData);
   if (result.success) {
     await loadEvents();
-    closeEventModal();
+    activeTab = 'events';
     render();
-    alert(result.editingEventId ? 'Event updated!' : 'Event created!');
+    alert('Event created successfully!');
   } else {
     alert('Error: ' + result.error);
   }
 };
 
+window.openBookingModal = (eventId) => {
+  const event = events.find(e => e.id === eventId);
+  if (!event) return;
+  
+  const seatsLeft = event.capacity - (event.booked || 0);
+  
+  const modalBody = `
+    <div class="booking-details">
+      <p><strong>${event.emoji || '🎉'} ${event.title}</strong></p>
+      <p>📅 ${event.date} at ${event.time}</p>
+      <p>📍 ${event.venue}, ${event.city}</p>
+      <p>💰 Price: ${event.price === 0 ? 'FREE' : '$' + event.price}</p>
+      <p>🎟️ Available seats: ${seatsLeft}</p>
+    </div>
+    <div class="form-group">
+      <label>Number of Tickets</label>
+      <input type="number" id="booking-tickets" min="1" max="${Math.min(seatsLeft, 10)}" value="1">
+    </div>
+    <div class="form-group">
+      <p><strong>Total: $<span id="booking-total">${event.price}</span></strong></p>
+    </div>
+    <button class="btn btn-primary" onclick="confirmBooking('${eventId}', ${event.price})">Confirm Booking →</button>
+  `;
+  
+  document.getElementById('booking-modal-body').innerHTML = modalBody;
+  document.getElementById('booking-modal').classList.add('active');
+  
+  // Add ticket quantity listener
+  const ticketInput = document.getElementById('booking-tickets');
+  if (ticketInput) {
+    ticketInput.addEventListener('change', () => {
+      const tickets = parseInt(ticketInput.value) || 1;
+      document.getElementById('booking-total').textContent = event.price * tickets;
+    });
+  }
+};
+
+window.confirmBooking = async (eventId, price) => {
+  const tickets = parseInt(document.getElementById('booking-tickets').value) || 1;
+  
+  const result = await createBooking(eventId, tickets);
+  if (result.success) {
+    closeBookingModal();
+    await loadEvents();
+    await loadMyBookings();
+    render();
+    alert(`Successfully booked ${tickets} ticket(s)!`);
+  } else {
+    alert('Booking failed: ' + result.error);
+  }
+};
+
+window.closeBookingModal = () => {
+  document.getElementById('booking-modal').classList.remove('active');
+};
+
 window.viewEventDetails = (eventId) => {
   const event = events.find(e => e.id === eventId);
   if (event) {
-    alert(`📌 ${event.title}\n\n📅 ${event.date} at ${event.time}\n📍 ${event.venue}, ${event.city}\n💰 ${event.price === 0 ? 'FREE' : '$' + event.price}\n\n${event.description || 'No description available.'}`);
+    alert(`📌 ${event.title}\n\n📅 ${event.date} at ${event.time}\n📍 ${event.venue}, ${event.city}\n💰 ${event.price === 0 ? 'FREE' : '$' + event.price}\n🎟️ ${event.capacity - (event.booked || 0)} seats left\n\n${event.description || 'No description available.'}`);
   }
 };
 
@@ -878,7 +1073,6 @@ async function render() {
 // ============================================================
 auth.onAuthStateChanged(async (user) => {
   if (user) {
-    // User is signed in
     const userDoc = await db.collection('users').doc(user.uid).get();
     const userData = userDoc.data();
     currentUser = {
@@ -887,11 +1081,12 @@ auth.onAuthStateChanged(async (user) => {
       email: user.email
     };
     currentView = 'dashboard';
+    activeTab = 'events';
     await seedEvents();
     await loadEvents();
+    await loadMyBookings();
     render();
   } else {
-    // User is signed out
     currentUser = null;
     currentView = 'auth';
     render();
