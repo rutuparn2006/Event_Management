@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Evnt — Event Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --bg: #0a0a0a;
+  --surface: #1a1a1a;
+  --surface2: #2a2a2a;
+  --accent: #c8f05a;
+  --accent-dark: #a8d040;
+  --text: #ffffff;
+  --text2: #b0b0b0;
+  --text3: #707070;
+  --danger: #ff4757;
+  --success: #4ade80;
+  --border: rgba(255,255,255,0.1);
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* Auth Page Styles */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+  padding: 20px;
+}
+
+.auth-card {
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 48px;
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border: 1px solid var(--border);
+}
+
+.logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.logo h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 32px;
+  color: var(--accent);
+}
+
+.logo span {
+  color: var(--text);
+}
+
+.logo p {
+  color: var(--text3);
+  margin-top: 8px;
+  font-size: 14px;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 32px;
+  background: var(--surface2);
+  padding: 4px;
+  border-radius: 12px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 12px;
+  border: none;
+  background: transparent;
+  color: var(--text3);
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.auth-tab.active {
+  background: var(--accent);
+  color: #000;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text2);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(200, 240, 90, 0.2);
+}
+
+.btn {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #000;
+}
+
+.btn-primary:hover {
+  background: var(--accent-dark);
+  transform: translateY(-2px);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.error-message {
+  background: rgba(255, 71, 87, 0.1);
+  color: var(--danger);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  text-align: center;
+}
+
+.success-message {
+  background: rgba(74, 222, 128, 0.1);
+  color: var(--success);
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Dashboard Styles */
+.dashboard-container {
+  min-height: 100vh;
+}
+
+.navbar {
+  background: var(--surface);
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-logo {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.nav-logo span {
+  color: var(--accent);
+}
+
+.nav-user {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-name {
+  color: var(--text2);
+}
+
+.main-content {
+  padding: 32px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.welcome-section {
+  margin-bottom: 32px;
+}
+
+.welcome-section h1 {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.welcome-section p {
+  color: var(--text3);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: var(--surface);
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
+
+.stat-card h3 {
+  font-size: 14px;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+
+.stat-card .stat-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.btn-secondary {
+  background: var(--surface2);
+  color: var(--text);
+  width: auto;
+  padding: 10px 20px;
+}
+
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.event-card {
+  background: var(--surface);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  transition: transform 0.3s;
+}
+
+.event-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+}
+
+.event-icon {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  background: var(--surface2);
+}
+
+.event-info {
+  padding: 20px;
+}
+
+.event-info h3 {
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+
+.event-details {
+  color: var(--text3);
+  font-size: 13px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.event-footer {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.event-price {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.btn-sm {
+  width: auto;
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal.active {
+  display: flex;
+}
+
+.modal-content {
+  background: var(--surface);
+  border-radius: 24px;
+  padding: 32px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  color: var(--text);
+  font-size: 24px;
+  cursor: pointer;
+}
+
+textarea {
+  width: 100%;
+  padding: 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  resize: vertical;
+  font-family: inherit;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px;
+  color: var(--text3);
+}
+
+@media (max-width: 768px) {
+  .auth-card { padding: 32px; margin: 16px; }
+  .main-content { padding: 16px; }
+  .navbar { padding: 12px 16px; }
+  .stats-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+
+<script>
+// ============================================================
+//  FIREBASE CONFIGURATION - REPLACE WITH YOUR CONFIG!
+// ============================================================
+// Go to Firebase Console → Project Settings → Your Web App → Copy config
+const firebaseConfig = {
+  apiKey: "AIzaSyDlU0Lz92AVTxZI1CGJuVXawfXceTNGr24",
+  authDomain: "event-management-system-26b15.firebaseapp.com",
+  projectId: "event-management-system-26b15",
+  storageBucket: "event-management-system-26b15.firebasestorage.app",
+  messagingSenderId: "677748411988",
+  appId: "1:677748411988:web:64acac412b07323469a7c1",
+  measurementId: "G-YCBGV9YWD5"
+};
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
+// ============================================================
+//  App State
+// ============================================================
+let currentUser = null;
+let events = [];
+let currentView = 'auth'; // 'auth' or 'dashboard'
+
+// ============================================================
+//  Helper Functions
+// ============================================================
+function showToast(message, type = 'success') {
+  // Simple alert for now, can be enhanced
+  alert(message);
+}
+
+// ============================================================
+//  Auth Functions
+// ============================================================
+async function signUp(email, password, name) {
+  try {
+    const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+    
+    // Save user data to Firestore
+    await db.collection('users').doc(user.uid).set({
+      name: name,
+      email: email,
+      createdAt: new Date(),
+      role: 'user'
+    });
+    
+    return { success: true, user: { uid: user.uid, name: name, email: email } };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+async function signIn(email, password) {
+  try {
+    const userCredential = await auth.signInWithEmailAndPassword(email, password);
+    const user = userCredential.user;
+    
+    // Get user data from Firestore
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    const userData = userDoc.data();
+    
+    return { 
+      success: true, 
+      user: { 
+        uid: user.uid, 
+        name: userData?.name || email.split('@')[0], 
+        email: user.email 
+      } 
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+async function signOut() {
+  await auth.signOut();
+  currentUser = null;
+  currentView = 'auth';
+  render();
+}
+
+// ============================================================
+//  Event Functions
+// ============================================================
+async function loadEvents() {
+  try {
+    const snapshot = await db.collection('events').get();
+    events = [];
+    snapshot.forEach(doc => {
+      events.push({ id: doc.id, ...doc.data() });
+    });
+    return events;
+  } catch (error) {
+    console.error("Error loading events:", error);
+    return [];
+  }
+}
+
+async function addEvent(eventData) {
+  try {
+    const docRef = await db.collection('events').add({
+      ...eventData,
+      createdAt: new Date(),
+      createdBy: currentUser?.uid,
+      booked: 0
+    });
+    return { success: true, id: docRef.id };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+async function updateEvent(eventId, eventData) {
+  try {
+    await db.collection('events').doc(eventId).update(eventData);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+async function deleteEvent(eventId) {
+  try {
+    await db.collection('events').doc(eventId).delete();
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+// Seed initial events
+async function seedEvents() {
+  const snapshot = await db.collection('events').get();
+  if (snapshot.empty) {
+    const sampleEvents = [
+      { title: '🎷 Neon Jazz Night', category: 'music', date: '2026-05-10', time: '20:00', venue: 'Blue Note Lounge', city: 'New York', price: 45, capacity: 120, emoji: '🎷', description: 'An immersive jazz evening featuring five acclaimed artists.' },
+      { title: '⚡ React Summit 2026', category: 'tech', date: '2026-05-22', time: '09:00', venue: 'TechHub Arena', city: 'San Francisco', price: 199, capacity: 500, emoji: '⚡', description: 'The premier React conference with 30+ talks.' },
+      { title: '🎨 Abstract Art Gala', category: 'arts', date: '2026-06-03', time: '18:30', venue: 'Metropolitan Gallery', city: 'Chicago', price: 35, capacity: 200, emoji: '🎨', description: 'A curated showcase of emerging artists.' },
+      { title: '🍜 Street Food Festival', category: 'food', date: '2026-06-15', time: '11:00', venue: 'Riverside Park', city: 'Austin', price: 0, capacity: 2000, emoji: '🍜', description: '50+ local food trucks.' },
+      { title: '🏃 Marathon City Run', category: 'sports', date: '2026-07-04', time: '07:00', venue: 'City Center', city: 'Boston', price: 60, capacity: 5000, emoji: '🏃', description: 'Annual 42k marathon.' },
+      { title: '🚀 Startup Pitch Day', category: 'business', date: '2026-07-18', time: '10:00', venue: 'Innovation Hub', city: 'Seattle', price: 25, capacity: 300, emoji: '🚀', description: '20 startups pitch to VCs.' }
+    ];
+    
+    for (const event of sampleEvents) {
+      await db.collection('events').add(event);
+    }
+    console.log("✅ Seeded events to Firebase!");
+  }
+}
+
+// ============================================================
+//  Auth UI Components
+// ============================================================
+function renderAuthPage() {
+  return `
+    <div class="auth-container">
+      <div class="auth-card">
+        <div class="logo">
+          <h1>Evnt<span>.</span></h1>
+          <p>Your gateway to extraordinary events</p>
+        </div>
+        
+        <div class="auth-tabs">
+          <button class="auth-tab ${window.activeTab === 'login' ? 'active' : ''}" onclick="switchTab('login')">Sign In</button>
+          <button class="auth-tab ${window.activeTab === 'signup' ? 'active' : ''}" onclick="switchTab('signup')">Create Account</button>
+        </div>
+        
+        <div id="auth-form-container">
+          ${window.activeTab === 'login' ? renderLoginForm() : renderSignupForm()}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderLoginForm() {
+  return `
+    <form onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="login-email" required placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn btn-primary">Sign In →</button>
+    </form>
+  `;
+}
+
+function renderSignupForm() {
+  return `
+    <form onsubmit="handleSignup(event)">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="signup-name" required placeholder="Your name">
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="signup-email" required placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="signup-password" required placeholder="Min 6 characters">
+      </div>
+      <button type="submit" class="btn btn-primary">Create Account →</button>
+    </form>
+  `;
+}
+
+// ============================================================
+//  Dashboard UI Components
+// ============================================================
+function renderDashboard() {
+  return `
+    <div class="dashboard-container">
+      <nav class="navbar">
+        <div class="nav-logo">Evnt<span>.</span></div>
+        <div class="nav-user">
+          <span class="user-name">👋 ${currentUser?.name || 'User'}</span>
+          <button class="btn btn-sm btn-danger" onclick="handleLogout()">Sign Out</button>
+        </div>
+      </nav>
+      
+      <main class="main-content">
+        <div class="welcome-section">
+          <h1>Welcome back, ${currentUser?.name?.split(' ')[0] || 'User'}! 👋</h1>
+          <p>Discover and manage amazing events</p>
+        </div>
+        
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Events</h3>
+            <div class="stat-value">${events.length}</div>
+          </div>
+          <div class="stat-card">
+            <h3>Categories</h3>
+            <div class="stat-value">${new Set(events.map(e => e.category)).size}</div>
+          </div>
+          <div class="stat-card">
+            <h3>Cities</h3>
+            <div class="stat-value">${new Set(events.map(e => e.city)).size}</div>
+          </div>
+        </div>
+        
+        <div class="action-bar">
+          <h2>Upcoming Events</h2>
+          <button class="btn btn-primary btn-sm" onclick="openEventModal()">+ Create Event</button>
+        </div>
+        
+        <div class="events-grid" id="events-grid">
+          ${events.length > 0 ? events.map(event => renderEventCard(event)).join('') : '<div class="empty-state">✨ No events yet. Create your first event!</div>'}
+        </div>
+      </main>
+    </div>
+    
+    <!-- Event Modal -->
+    <div id="event-modal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 id="modal-title">Create New Event</h2>
+          <button class="modal-close" onclick="closeEventModal()">&times;</button>
+        </div>
+        <form id="event-form" onsubmit="handleSaveEvent(event)">
+          <div class="form-group">
+            <label>Event Title</label>
+            <input type="text" id="event-title" required>
+          </div>
+          <div class="form-group">
+            <label>Description</label>
+            <textarea id="event-description" rows="3"></textarea>
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select id="event-category" class="form-group">
+              <option value="music">🎵 Music</option>
+              <option value="tech">💻 Tech</option>
+              <option value="arts">🎨 Arts</option>
+              <option value="food">🍔 Food</option>
+              <option value="sports">⚽ Sports</option>
+              <option value="business">💼 Business</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Emoji</label>
+            <input type="text" id="event-emoji" placeholder="🎉">
+          </div>
+          <div class="form-group">
+            <label>Date</label>
+            <input type="date" id="event-date" required>
+          </div>
+          <div class="form-group">
+            <label>Time</label>
+            <input type="time" id="event-time" required>
+          </div>
+          <div class="form-group">
+            <label>Venue</label>
+            <input type="text" id="event-venue" required>
+          </div>
+          <div class="form-group">
+            <label>City</label>
+            <input type="text" id="event-city" required>
+          </div>
+          <div class="form-group">
+            <label>Price ($)</label>
+            <input type="number" id="event-price" value="0">
+          </div>
+          <div class="form-group">
+            <label>Capacity</label>
+            <input type="number" id="event-capacity" value="100">
+          </div>
+          <button type="submit" class="btn btn-primary">Save Event</button>
+        </form>
+      </div>
+    </div>
+  `;
+}
+
+function renderEventCard(event) {
+  const seatsLeft = event.capacity - (event.booked || 0);
+  return `
+    <div class="event-card">
+      <div class="event-icon">${event.emoji || '🎉'}</div>
+      <div class="event-info">
+        <h3>${event.title}</h3>
+        <div class="event-details">📅 ${event.date} · ${event.time}</div>
+        <div class="event-details">📍 ${event.venue}, ${event.city}</div>
+        <div class="event-details">🏷️ ${event.category}</div>
+      </div>
+      <div class="event-footer">
+        <span class="event-price">${event.price === 0 ? 'FREE' : '$' + event.price}</span>
+        <span class="event-seats">${seatsLeft} seats left</span>
+        <button class="btn btn-sm btn-primary" onclick="viewEventDetails('${event.id}')">View</button>
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+//  Event Handlers
+// ============================================================
+window.activeTab = 'login';
+
+window.switchTab = (tab) => {
+  window.activeTab = tab;
+  render();
+};
+
+window.handleLogin = async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
+  
+  const result = await signIn(email, password);
+  if (result.success) {
+    currentUser = result.user;
+    currentView = 'dashboard';
+    await loadEvents();
+    render();
+  } else {
+    alert('Login failed: ' + result.error);
+  }
+};
+
+window.handleSignup = async (e) => {
+  e.preventDefault();
+  const name = document.getElementById('signup-name').value;
+  const email = document.getElementById('signup-email').value;
+  const password = document.getElementById('signup-password').value;
+  
+  if (password.length < 6) {
+    alert('Password must be at least 6 characters');
+    return;
+  }
+  
+  const result = await signUp(email, password, name);
+  if (result.success) {
+    currentUser = result.user;
+    currentView = 'dashboard';
+    await loadEvents();
+    render();
+  } else {
+    alert('Signup failed: ' + result.error);
+  }
+};
+
+window.handleLogout = async () => {
+  await signOut();
+};
+
+window.openEventModal = () => {
+  document.getElementById('event-modal').classList.add('active');
+  document.getElementById('modal-title').textContent = 'Create New Event';
+  document.getElementById('event-form').reset();
+  window.editingEventId = null;
+};
+
+window.closeEventModal = () => {
+  document.getElementById('event-modal').classList.remove('active');
+};
+
+window.handleSaveEvent = async (e) => {
+  e.preventDefault();
+  
+  const eventData = {
+    title: document.getElementById('event-title').value,
+    description: document.getElementById('event-description').value,
+    category: document.getElementById('event-category').value,
+    emoji: document.getElementById('event-emoji').value || '🎉',
+    date: document.getElementById('event-date').value,
+    time: document.getElementById('event-time').value,
+    venue: document.getElementById('event-venue').value,
+    city: document.getElementById('event-city').value,
+    price: parseInt(document.getElementById('event-price').value) || 0,
+    capacity: parseInt(document.getElementById('event-capacity').value) || 100
+  };
+  
+  let result;
+  if (window.editingEventId) {
+    result = await updateEvent(window.editingEventId, eventData);
+  } else {
+    result = await addEvent(eventData);
+  }
+  
+  if (result.success) {
+    await loadEvents();
+    closeEventModal();
+    render();
+    alert(result.editingEventId ? 'Event updated!' : 'Event created!');
+  } else {
+    alert('Error: ' + result.error);
+  }
+};
+
+window.viewEventDetails = (eventId) => {
+  const event = events.find(e => e.id === eventId);
+  if (event) {
+    alert(`📌 ${event.title}\n\n📅 ${event.date} at ${event.time}\n📍 ${event.venue}, ${event.city}\n💰 ${event.price === 0 ? 'FREE' : '$' + event.price}\n\n${event.description || 'No description available.'}`);
+  }
+};
+
+// ============================================================
+//  Main Render Function
+// ============================================================
+async function render() {
+  const app = document.getElementById('app');
+  
+  if (currentView === 'auth') {
+    app.innerHTML = renderAuthPage();
+  } else if (currentView === 'dashboard') {
+    app.innerHTML = renderDashboard();
+  }
+}
+
+// ============================================================
+//  Auth State Listener
+// ============================================================
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    // User is signed in
+    const userDoc = await db.collection('users').doc(user.uid).get();
+    const userData = userDoc.data();
+    currentUser = {
+      uid: user.uid,
+      name: userData?.name || user.email.split('@')[0],
+      email: user.email
+    };
+    currentView = 'dashboard';
+    await seedEvents();
+    await loadEvents();
+    render();
+  } else {
+    // User is signed out
+    currentUser = null;
+    currentView = 'auth';
+    render();
+  }
+});
+
+// Initial render
+render();
+</script>
+</body>
+</html>
