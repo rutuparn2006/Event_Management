@@ -614,6 +614,7 @@ async function createBooking(eventId, tickets) {
     
     const totalPrice = (event.price || 0) * tickets;
     
+    // Fix: Store date as Firestore Timestamp for consistency
     await db.collection('bookings').add({
       userId: currentUser.uid,
       userName: currentUser.name,
@@ -621,7 +622,7 @@ async function createBooking(eventId, tickets) {
       eventTitle: event.title,
       tickets: tickets,
       totalPrice: totalPrice,
-      bookingDate: new Date(),
+      bookingDate: firebase.firestore.FieldValue.serverTimestamp(), // This creates proper Firestore Timestamp
       status: 'confirmed'
     });
     
@@ -634,7 +635,6 @@ async function createBooking(eventId, tickets) {
     return { success: false, error: error.message };
   }
 }
-
 // Seed initial events
 async function seedEvents() {
   const snapshot = await db.collection('events').get();
@@ -882,6 +882,34 @@ function renderBookingCard(booking) {
   const event = booking.event;
   if (!event) return '';
   
+  // Fix: Convert Firebase Timestamp to Date properly
+  let bookingDateString = 'Date unavailable';
+  if (booking.bookingDate) {
+    try {
+      // Check if it's a Firebase Timestamp
+      if (booking.bookingDate.toDate) {
+        bookingDateString = booking.bookingDate.toDate().toLocaleDateString();
+      } 
+      // Check if it's a regular Date object
+      else if (booking.bookingDate instanceof Date) {
+        bookingDateString = booking.bookingDate.toLocaleDateString();
+      }
+      // Check if it's a string
+      else if (typeof booking.bookingDate === 'string') {
+        bookingDateString = new Date(booking.bookingDate).toLocaleDateString();
+      }
+      // Check if it's a number (timestamp)
+      else if (typeof booking.bookingDate === 'number') {
+        bookingDateString = new Date(booking.bookingDate).toLocaleDateString();
+      }
+      else {
+        bookingDateString = 'Just now';
+      }
+    } catch(e) {
+      bookingDateString = 'Recently';
+    }
+  }
+  
   return `
     <div class="event-card">
       <div class="event-icon">${event.emoji || '🎉'}</div>
@@ -892,9 +920,9 @@ function renderBookingCard(booking) {
         <div class="event-details">🎟️ ${booking.tickets} ticket(s)</div>
         <div class="event-details">💰 Total: $${booking.totalPrice}</div>
         <div class="event-details">✅ Status: ${booking.status}</div>
+        <div class="event-details">📅 Booked on: ${bookingDateString}</div>
       </div>
       <div class="event-footer">
-        <span class="event-price">Booked on ${new Date(booking.bookingDate).toLocaleDateString()}</span>
         <button class="btn btn-sm btn-primary" onclick="viewEventDetails('${event.id}')">View Event</button>
       </div>
     </div>
