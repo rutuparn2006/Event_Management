@@ -13,17 +13,17 @@
 }
 
 :root {
-  --bg: #0a0a0a;
-  --surface: #1a1a1a;
-  --surface2: #2a2a2a;
-  --accent: #c8f05a;
-  --accent-dark: #a8d040;
-  --text: #ffffff;
-  --text2: #b0b0b0;
-  --text3: #707070;
-  --danger: #ff4757;
-  --success: #4ade80;
-  --border: rgba(255,255,255,0.1);
+  --bg: #f5f9ff;
+  --surface: #ffffff;
+  --surface2: #f0f4fa;
+  --accent: #1e88e5;
+  --accent-dark: #0d5a9e;
+  --text: #1a1f2c;
+  --text2: #4a5568;
+  --text3: #7c8ba0;
+  --danger: #e53e3e;
+  --success: #2ecc71;
+  --border: #e2e8f0;
 }
 
 body {
@@ -39,7 +39,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #e1eff9 100%);
   padding: 20px;
 }
 
@@ -49,7 +49,7 @@ body {
   padding: 48px;
   width: 100%;
   max-width: 440px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
   border: 1px solid var(--border);
 }
 
@@ -65,7 +65,7 @@ body {
 }
 
 .logo span {
-  color: var(--text);
+  color: #000;
 }
 
 .logo p {
@@ -98,7 +98,7 @@ body {
 
 .auth-tab.active {
   background: var(--accent);
-  color: #000;
+  color: white;
 }
 
 .form-group {
@@ -127,7 +127,7 @@ body {
 .form-group input:focus, .form-group select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(200, 240, 90, 0.2);
+  box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.2);
 }
 
 .btn {
@@ -143,7 +143,7 @@ body {
 
 .btn-primary {
   background: var(--accent);
-  color: #000;
+  color: white;
 }
 
 .btn-primary:hover {
@@ -171,7 +171,7 @@ body {
 
 .btn-book {
   background: var(--success);
-  color: #000;
+  color: white;
 }
 
 .btn-book:hover {
@@ -194,12 +194,14 @@ body {
   position: sticky;
   top: 0;
   z-index: 100;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.02);
 }
 
 .nav-logo {
   font-family: 'Fraunces', serif;
   font-size: 24px;
   font-weight: 600;
+  color: #000;
 }
 
 .nav-logo span {
@@ -229,6 +231,7 @@ body {
 .welcome-section h1 {
   font-size: 28px;
   margin-bottom: 8px;
+  color: #000;
 }
 
 .welcome-section p {
@@ -247,6 +250,7 @@ body {
   padding: 24px;
   border-radius: 16px;
   border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.02);
 }
 
 .stat-card h3 {
@@ -281,12 +285,14 @@ body {
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid var(--border);
-  transition: transform 0.3s;
+  transition: transform 0.3s, box-shadow 0.3s;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.03);
 }
 
 .event-card:hover {
   transform: translateY(-4px);
   border-color: var(--accent);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.08);
 }
 
 .event-icon {
@@ -305,6 +311,7 @@ body {
 .event-info h3 {
   margin-bottom: 12px;
   font-size: 18px;
+  color: #000;
 }
 
 .event-details {
@@ -347,7 +354,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.5);
   align-items: center;
   justify-content: center;
   z-index: 1000;
@@ -365,6 +372,7 @@ body {
   max-width: 500px;
   max-height: 80vh;
   overflow-y: auto;
+  box-shadow: 0 20px 35px -10px rgba(0,0,0,0.2);
 }
 
 .modal-header {
@@ -431,7 +439,7 @@ textarea {
 
 .tab-btn.active {
   background: var(--accent);
-  color: #000;
+  color: white;
 }
 
 .my-bookings-section {
@@ -622,7 +630,7 @@ async function createBooking(eventId, tickets) {
       eventTitle: event.title,
       tickets: tickets,
       totalPrice: totalPrice,
-      bookingDate: firebase.firestore.FieldValue.serverTimestamp(), // This creates proper Firestore Timestamp
+      bookingDate: firebase.firestore.FieldValue.serverTimestamp(),
       status: 'confirmed'
     });
     
@@ -886,19 +894,15 @@ function renderBookingCard(booking) {
   let bookingDateString = 'Date unavailable';
   if (booking.bookingDate) {
     try {
-      // Check if it's a Firebase Timestamp
       if (booking.bookingDate.toDate) {
         bookingDateString = booking.bookingDate.toDate().toLocaleDateString();
       } 
-      // Check if it's a regular Date object
       else if (booking.bookingDate instanceof Date) {
         bookingDateString = booking.bookingDate.toLocaleDateString();
       }
-      // Check if it's a string
       else if (typeof booking.bookingDate === 'string') {
         bookingDateString = new Date(booking.bookingDate).toLocaleDateString();
       }
-      // Check if it's a number (timestamp)
       else if (typeof booking.bookingDate === 'number') {
         bookingDateString = new Date(booking.bookingDate).toLocaleDateString();
       }
@@ -1125,4 +1129,4 @@ auth.onAuthStateChanged(async (user) => {
 render();
 </script>
 </body>
-</html>
+</html>ss
